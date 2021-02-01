@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+    
+     tools
+    {
+        maven 'maven.3.6.3'
+    }
+    stages{
+        stage ('checkoutcode')
+        {
+            steps {
+                git branch: 'development', credentialsId: '61e1da48-a6d5-43c5-ac8e-1c1620f025e0', url: 'https://github.com/jansylakshmi/maven-web-application.git'
+            }
+        }
+        stage ('Build')
+        {
+            steps {
+                sh "mvn clean package"
+            }
+        }
+        stage ('ExecuteSonarqubeReport')
+        {
+            steps {
+                sh "mvn sonar:sonar"
+            }
+        }
+        stage ('UploadArtifactintoNexus')
+        {
+            steps {
+                sh "mvn deploy"
+            }
+        }
+        stage ('DeployappintoTomcatServer')
+        {
+            steps {
+                sshagent (['68579ba0-17c2-4bc2-bc6a-e1c22ff34adf']) {
+                sh "scp -o StrictHostkeyChecking=no target/maven-web-application.war ec2-user@3.6.92.212:/opt/apache-tomcat-9.0.41/webapps/"
+                }
+            }
+       }
+       
+       
+       
+       
+    }
+    post {
+        success {
+            mail bcc: 'jansylakshmicglr@gmail.com', body: '''Buildover
+  
+
+Regards,
+Mithuntechnologies''', cc: 'jansylakshmicglr@gmail.com', from: '', replyTo: '', subject: 'BuildOver', to: 'jansylakshmicglr@gmail.com'
+        }
+        
+    }
+
+}
+
+
